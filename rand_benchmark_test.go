@@ -32,7 +32,7 @@ func BenchmarkCore(b *testing.B) {
 }
 
 func BenchmarkRand(b *testing.B) {
-	generator := New(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))
+	generator := New().Seed(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))
 	var acc int64
 	for i := 0; i < b.N; i++ {
 		acc += generator.Int63()
@@ -52,7 +52,7 @@ func BenchmarkCoreEach(b *testing.B) {
 func BenchmarkRandEach(b *testing.B) {
 	var acc int64
 	for i := 0; i < b.N; i++ {
-		generator := New(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))
+		generator := New().Seed(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))
 		acc += generator.Int63()
 	}
 	_ = acc
@@ -91,7 +91,7 @@ func BenchmarkCoreParallel(b *testing.B) {
 
 func BenchmarkRandParallel(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
-		generator := New(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))
+		generator := New().Seed(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))
 		var acc int64
 		for pb.Next() {
 			acc += generator.Int63()
@@ -115,7 +115,7 @@ func BenchmarkRandEachParallel(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		var acc int64
 		for pb.Next() {
-			generator := New(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))
+			generator := New().Seed(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))
 			acc += generator.Int63()
 		}
 		_ = acc

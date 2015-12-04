@@ -96,7 +96,7 @@ func checkSampleSliceDistributions(t *testing.T, samples []float64, nslices int,
 //
 
 func generateNormalSamples(nsamples int, mean, stddev float64, seed int64) []float64 {
-	r := New(uint64(seed), uint64(seed))
+	r := New().Seed(uint64(seed), uint64(seed))
 	samples := make([]float64, nsamples)
 	for i := range samples {
 		samples[i] = r.NormFloat64()*stddev + mean
@@ -153,7 +153,7 @@ func TestNonStandardNormalValues(t *testing.T) {
 //
 
 func generateExponentialSamples(nsamples int, rate float64, seed int64) []float64 {
-	r := New(uint64(seed), uint64(seed))
+	r := New().Seed(uint64(seed), uint64(seed))
 	samples := make([]float64, nsamples)
 	for i := range samples {
 		samples[i] = r.ExpFloat64() / rate
@@ -333,7 +333,7 @@ func TestFloat32(t *testing.T) {
 		num /= 100 // 1.72 seconds instead of 172 seconds
 	}
 
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for ct := 0; ct < num; ct++ {
 		f := r.Float32()
 		if f >= 1 {
@@ -351,56 +351,56 @@ func BenchmarkInt63Threadsafe(b *testing.B) {
 }
 
 func BenchmarkInt63Unthreadsafe(b *testing.B) {
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for n := b.N; n > 0; n-- {
 		r.Int63()
 	}
 }
 
 func BenchmarkIntn1000(b *testing.B) {
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for n := b.N; n > 0; n-- {
 		r.Intn(1000)
 	}
 }
 
 func BenchmarkInt63n1000(b *testing.B) {
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for n := b.N; n > 0; n-- {
 		r.Int63n(1000)
 	}
 }
 
 func BenchmarkInt31n1000(b *testing.B) {
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for n := b.N; n > 0; n-- {
 		r.Int31n(1000)
 	}
 }
 
 func BenchmarkFloat32(b *testing.B) {
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for n := b.N; n > 0; n-- {
 		r.Float32()
 	}
 }
 
 func BenchmarkFloat64(b *testing.B) {
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for n := b.N; n > 0; n-- {
 		r.Float64()
 	}
 }
 
 func BenchmarkPerm3(b *testing.B) {
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for n := b.N; n > 0; n-- {
 		r.Perm(3)
 	}
 }
 
 func BenchmarkPerm30(b *testing.B) {
-	r := New(1, 1)
+	r := New().Seed(1, 1)
 	for n := b.N; n > 0; n-- {
 		r.Perm(30)
 	}

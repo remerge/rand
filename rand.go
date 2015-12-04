@@ -20,9 +20,7 @@ var pos uint64
 func init() {
 	gorand.Seed(time.Now().UnixNano())
 	for i := range pool {
-		a := uint64(gorand.Uint32())<<32 + uint64(gorand.Uint32())
-		b := uint64(gorand.Uint32())<<32 + uint64(gorand.Uint32())
-		pool[i] = New(a, b)
+		pool[i] = New().RandomSeed()
 	}
 }
 
@@ -35,8 +33,20 @@ type Rand struct {
 	src [2]uint64
 }
 
-func New(seed1, seed2 uint64) *Rand {
-	return &Rand{[2]uint64{seed1, seed2}}
+func New() *Rand {
+	return &Rand{}
+}
+
+func (r *Rand) Seed(a, b uint64) *Rand {
+	r.src[0] = a
+	r.src[1] = b
+	return r
+}
+
+func (r *Rand) RandomSeed() *Rand {
+	r.src[0] = uint64(gorand.Uint32())<<32 + uint64(gorand.Uint32())
+	r.src[1] = uint64(gorand.Uint32())<<32 + uint64(gorand.Uint32())
+	return r
 }
 
 // this is xorshift+ https://en.wikipedia.org/wiki/Xorshift
