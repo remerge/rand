@@ -14,7 +14,7 @@ const (
 )
 
 // random number generator pool
-var pool = make([]*Xor128Rand, poolSize)
+var pool = make([]*Rand, poolSize)
 var pos uint64
 
 func init() {
@@ -22,25 +22,25 @@ func init() {
 	for i := range pool {
 		a := uint64(gorand.Uint32())<<32 + uint64(gorand.Uint32())
 		b := uint64(gorand.Uint32())<<32 + uint64(gorand.Uint32())
-		pool[i] = NewXorRand(a, b)
+		pool[i] = New(a, b)
 	}
 }
 
-func Next() *Xor128Rand {
+func Next() *Rand {
 	apos := int(atomic.AddUint64(&pos, 1) % poolSize)
 	return pool[apos]
 }
 
-type Xor128Rand struct {
+type Rand struct {
 	src [2]uint64
 }
 
-func NewXorRand(seed1, seed2 uint64) *Xor128Rand {
-	return &Xor128Rand{[2]uint64{seed1, seed2}}
+func New(seed1, seed2 uint64) *Rand {
+	return &Rand{[2]uint64{seed1, seed2}}
 }
 
 // this is xorshift+ https://en.wikipedia.org/wiki/Xorshift
-func (r *Xor128Rand) Uint64() uint64 {
+func (r *Rand) Uint64() uint64 {
 	s1 := r.src[0]
 	s0 := r.src[1]
 	r.src[0] = s0
@@ -54,7 +54,7 @@ func Uint64() uint64 {
 }
 
 // Int63 returns a non-negative pseudo-random 63-bit integer as an int64.
-func (r *Xor128Rand) Int63() int64 {
+func (r *Rand) Int63() int64 {
 	return int64(r.Uint64()) & mask
 }
 
@@ -64,7 +64,7 @@ func Int63() int64 {
 }
 
 // Uint32 returns a pseudo-random 32-bit value as a uint32.
-func (r *Xor128Rand) Uint32() uint32 {
+func (r *Rand) Uint32() uint32 {
 	return uint32(r.Int63() >> 31)
 }
 
@@ -74,7 +74,7 @@ func Uint32() uint32 {
 }
 
 // Int31 returns a non-negative pseudo-random 31-bit integer as an int32.
-func (r *Xor128Rand) Int31() int32 {
+func (r *Rand) Int31() int32 {
 	return int32(r.Int63() >> 32)
 }
 
@@ -84,7 +84,7 @@ func Int31() int32 {
 }
 
 // Int returns a non-negative pseudo-random int.
-func (r *Xor128Rand) Int() int {
+func (r *Rand) Int() int {
 	u := uint(r.Int63())
 	return int(u << 1 >> 1) // clear sign bit if int == int32
 }
@@ -96,7 +96,7 @@ func Int() int {
 
 // Int63n returns, as an int64, a non-negative pseudo-random number in [0,n).
 // It panics if n <= 0.
-func (r *Xor128Rand) Int63n(n int64) int64 {
+func (r *Rand) Int63n(n int64) int64 {
 	if n <= 0 {
 		panic("invalid argument to Int63n")
 	}
@@ -119,7 +119,7 @@ func Int63n(n int64) int64 {
 
 // Int31n returns, as an int32, a non-negative pseudo-random number in [0,n).
 // It panics if n <= 0.
-func (r *Xor128Rand) Int31n(n int32) int32 {
+func (r *Rand) Int31n(n int32) int32 {
 	if n <= 0 {
 		panic("invalid argument to Int31n")
 	}
@@ -142,7 +142,7 @@ func Int31n(n int32) int32 {
 
 // Intn returns, as an int, a non-negative pseudo-random number in [0,n).
 // It panics if n <= 0.
-func (r *Xor128Rand) Intn(n int) int {
+func (r *Rand) Intn(n int) int {
 	if n <= 0 {
 		panic("invalid argument to Intn")
 	}
@@ -159,7 +159,7 @@ func Intn(n int) int {
 }
 
 // Float64 returns, as a float64, a pseudo-random number in [0.0,1.0).
-func (r *Xor128Rand) Float64() float64 {
+func (r *Rand) Float64() float64 {
 	// A clearer, simpler implementation would be:
 	//	return float64(Int63n(1<<53)) / (1<<53)
 	// However, Go 1 shipped with
@@ -190,7 +190,7 @@ func Float64() float64 {
 	return Next().Float64()
 }
 
-func (r *Xor128Rand) Float64Range(a, b float64) float64 {
+func (r *Rand) Float64Range(a, b float64) float64 {
 	if !(a < b) {
 		panic(fmt.Sprintf("Invalid range: %.2f ~ %.2f", a, b))
 	}
@@ -202,7 +202,7 @@ func Float64Range(a, b float64) float64 {
 }
 
 // Float32 returns, as a float32, a pseudo-random number in [0.0,1.0).
-func (r *Xor128Rand) Float32() float32 {
+func (r *Rand) Float32() float32 {
 	// Same rationale as in Float64: we want to preserve the Go 1 value
 	// stream except we want to fix it not to return 1.0
 	// There is a double rounding going on here, but the argument for
@@ -222,12 +222,17 @@ func Float32() float32 {
 }
 
 // Perm returns, as a slice of n ints, a pseudo-random permutation of the integers [0,n).
-func Perm(n int) []int {
+func (r *Rand) Perm(n int) []int {
 	m := make([]int, n)
 	for i := 0; i < n; i++ {
-		j := Intn(i + 1)
+		j := r.Intn(i + 1)
 		m[i] = m[j]
 		m[j] = i
 	}
 	return m
+}
+
+// Perm returns, as a slice of n ints, a pseudo-random permutation of the integers [0,n).
+func Perm(n int) []int {
+	return Next().Perm(n)
 }
