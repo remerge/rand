@@ -1,3 +1,4 @@
+sudo: false
 language: go
 go:
 - 1.4.3
@@ -8,5 +9,3 @@ install:
 
 script:
 - make test
-
-sudo: false
