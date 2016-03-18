@@ -1,4 +1,5 @@
-PACKAGE := github.com/remerge/rand
+PROJECT := rand
+PACKAGE := github.com/remerge/$(PROJECT)
 
 # http://stackoverflow.com/questions/322936/common-gnu-makefile-directory-path#comment11704496_324782
 TOP := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
@@ -11,7 +12,7 @@ GOFILES=$(shell git ls-files | grep '\.go$$')
 MAINGO=$(wildcard main/*.go)
 MAIN=$(patsubst main/%.go,%,$(MAINGO))
 
-.PHONY: build run clean lint test bench fmt dep up gen
+.PHONY: build run clean lint test bench fmt dep init up gen release deploy
 
 all: build
 
@@ -45,7 +46,6 @@ fmt:
 
 dep:
 	go get -u github.com/Masterminds/glide
-	go get -u github.com/smartystreets/goconvey
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install --update
 	cd $(GOSRCDIR) && glide install
@@ -62,3 +62,6 @@ gen:
 	cd $(GOSRCDIR) && \
 		go generate $(GOPATHS)
 	$(GOFMT) $(GOFILES)
+
+release:
+	git push origin master master:production
