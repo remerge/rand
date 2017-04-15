@@ -1,4 +1,4 @@
-# rand
+# go-rand
 
 Pooled, lock-free xorshift PRNG drop-in replacement for Go
 

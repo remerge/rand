@@ -1,4 +1,4 @@
-PROJECT := rand
+PROJECT := go-rand
 PACKAGE := github.com/remerge/$(PROJECT)
 
 # http://stackoverflow.com/questions/322936/common-gnu-makefile-directory-path#comment11704496_324782
@@ -9,29 +9,23 @@ GOFMT=gofmt -w -s
 GOSRCDIR=$(GOPATH)/src/$(PACKAGE)
 GOPATHS=$(shell glide novendor)
 GOFILES=$(shell git ls-files | grep '\.go$$')
-MAINGO=$(wildcard main/*.go)
-MAIN=$(patsubst main/%.go,%,$(MAINGO))
 
-.PHONY: build run clean lint test bench fmt dep init up gen release deploy
+.PHONY: build clean lint test bench fmt dep init up gen
 
 all: build
 
 build: fmt
 	cd $(GOSRCDIR) && \
 		CGO_ENABLED=0 \
-		go build -v -i $(MAINGO)
-
-run: build
-	./$(MAIN)
+		go build -v
 
 clean:
 	go clean
-	rm -f $(MAIN)
 	rm -rf $(TOP)/vendor/
 
 lint:
 	cd $(GOSRCDIR) && \
-		gometalinter --vendor --errors --fast --deadline=60s -D gotype $(GOPATHS)
+		gometalinter --deadline=60s --enable-all --errors --tests $(GOPATHS)
 
 test: lint
 	cd $(GOSRCDIR) && \
@@ -62,6 +56,3 @@ gen:
 	cd $(GOSRCDIR) && \
 		go generate $(GOPATHS)
 	$(GOFMT) $(GOFILES)
-
-release:
-	git push origin master master:production
