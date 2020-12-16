@@ -6,15 +6,29 @@ import (
 	"math"
 )
 
-// Gamma returns a random number of gamma distribution (alpha > 0.0 and beta > 0.0)
+// Function to provide a random float64 value
+type GetRandomFloat64Fn func() float64
+
+// Gamma returns a random number of gamma distribution (alpha > 0.0 and beta > 0.0).
+// Uses package's built-in float64 randomization routine.
 func Gamma(alpha, beta float64) float64 {
+	return calculateGamma(alpha, beta, Float64)
+}
+
+// Gamma returns a random number of gamma distribution (alpha > 0.0 and beta > 0.0).
+// Uses externally provided float64 randomization routine.
+func GammaEx(alpha, beta float64, random GetRandomFloat64Fn) float64 {
+	return calculateGamma(alpha, beta, random)
+}
+
+func calculateGamma(alpha, beta float64, random GetRandomFloat64Fn) float64 {
 	if !(alpha > 0.0) || !(beta > 0.0) {
 		panic(fmt.Sprintf("Invalid parameter alpha %.2f beta %.2f", alpha, beta))
 	}
-	return gamma(alpha, beta)
+	return gamma(alpha, beta, random)
 }
 
-func gamma(alpha, beta float64) float64 {
+func gamma(alpha, beta float64, random GetRandomFloat64Fn) float64 {
 	var MAGIC_CONST float64 = 4 * math.Exp(-0.5) / math.Sqrt(2.0)
 	if alpha > 1.0 {
 		// Use R.C.H Cheng "The generation of Gamma variables with
@@ -25,11 +39,11 @@ func gamma(alpha, beta float64) float64 {
 		ccc := alpha + ainv
 
 		for {
-			u1 := Float64()
+			u1 := random()
 			if !(1e-7 < u1 && u1 < .9999999) {
 				continue
 			}
-			u2 := 1.0 - Float64()
+			u2 := 1.0 - random()
 			v := math.Log(u1/(1.0-u1)) / ainv
 			x := alpha * math.Exp(v)
 			z := u1 * u1 * u2
@@ -39,16 +53,16 @@ func gamma(alpha, beta float64) float64 {
 			}
 		}
 	} else if alpha == 1.0 {
-		u := Float64()
+		u := random()
 		for u <= 1e-7 {
-			u = Float64()
+			u = random()
 		}
 		return -math.Log(u) * beta
 	} else { // alpha between 0.0 and 1.0 (exclusive)
 		// Uses Algorithm of Statistical Computing - kennedy & Gentle
 		var x float64
 		for {
-			u := Float64()
+			u := random()
 			b := (math.E + alpha) / math.E
 			p := b * u
 			if p <= 1.0 {
@@ -56,7 +70,7 @@ func gamma(alpha, beta float64) float64 {
 			} else {
 				x = -math.Log((b - p) / alpha)
 			}
-			u1 := Float64()
+			u1 := random()
 			if p > 1.0 {
 				if u1 <= math.Pow(x, alpha-1.0) {
 					break
