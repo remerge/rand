@@ -1,58 +1,100 @@
-PROJECT := go-rand
-PACKAGE := github.com/remerge/$(PROJECT)
+PROJECT_ID := rand
+PROJECT_NAME := Rand
+PROJECT_REPO := github.com/remerge/$(PROJECT_ID)
 
-# http://stackoverflow.com/questions/322936/common-gnu-makefile-directory-path#comment11704496_324782
-TOP := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+# Provide local development fallbacks if there are no CI variables
+DEV_WHOAMI := $(shell whoami)
+DEV_COMMIT := dev.$(DEV_WHOAMI).$(shell git rev-parse --short HEAD)
 
-GOFMT=gofmt -w -s
+# Set CI variables from GitHub Actions workflow run
+CI_COMMIT ?= $(or $(GITHUB_SHA), $(DEV_COMMIT))
+CI_REPO ?= $(or $(GITHUB_REPOSITORY), $(PROJECT_REPO))
+CI_NUM ?= $(or $(GITHUB_RUN_ID), $(DEV_WHOAMI))
 
-GOSRCDIR=$(GOPATH)/src/$(PACKAGE)
-GOPATHS=$(shell glide novendor)
-GOFILES=$(shell git ls-files | grep '\.go$$')
+# Base URL of our Google Cloud Artifact Registry for Docker images being
+# deployed as Nomad service jobs by GitHub Actions workflows or local divert
+SERVICES_ARTIFACT_REGISTRY := europe-west4-docker.pkg.dev/artifact-registry-ff9b/services/
 
-.PHONY: build clean lint test bench fmt dep init up gen
+# Use bash instead of sh as the shell to run commands
+# https://www.gnu.org/software/make/manual/html_node/Choosing-the-Shell.html
+SHELL = bash
 
-all: build
+# Show auto-generated help text when invoking make without a target
+# https://www.gnu.org/software/make/manual/html_node/Special-Variables.html
+.DEFAULT_GOAL := help
 
-build: fmt
-	cd $(GOSRCDIR) && \
-		CGO_ENABLED=0 \
-		go build -v
+.PHONY: help
+help: ## generate help text from Makefile comments
+	@grep -hE '^[a-zA-Z_0-9%-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-clean:
-	go clean
-	rm -rf $(TOP)/vendor/
+# https://www.gnu.org/software/make/manual/html_node/Double_002dColon.html
+.PHONY: install
+install:: ## prepare environment and install dependencies
+	@:
 
-lint:
-	cd $(GOSRCDIR) && \
-		gometalinter --deadline=60s --enable-all --errors --tests $(GOPATHS)
+.PHONY: update
+update:: ## update environment and dependencies
+	@:
 
-test: lint
-	cd $(GOSRCDIR) && \
-		go test -timeout 60s -v $(GOPATHS)
+.PHONY: generate
+generate:: ## generate documentation, configuration, schemas, etc
+	@:
 
-bench:
-	cd $(GOSRCDIR) && \
-		go test -bench=. -cpu 4 $(GOPATHS)
+.PHONY: check
+check:: ## run formatters and linters
+	@:
 
-fmt:
-	$(GOFMT) $(GOFILES)
+.PHONY: test
+test:: ## run unit and integration tests
+	@:
 
-dep:
-	go get -u github.com/Masterminds/glide
-	go get -u github.com/alecthomas/gometalinter
-	gometalinter --install --update
-	cd $(GOSRCDIR) && glide install
+.PHONY: build
+build:: ## run build steps and create artifact
+	@:
 
-init:
-	cd $(GOSRCDIR) && \
-		glide init
+.PHONY: clean
+clean:: ## remove build artifacts and caches
+	@:
 
-up:
-	cd $(GOSRCDIR) && \
-		glide update
+.PHONY: reset
+reset: ## cleanup and reset repository to remote state
+ifeq ($(FORCE),1)
+	git reset --hard @{upstream}
+	git clean -fdx
+else
+	@echo -e "\u001b[41mThis is a dangerous operation – use \`make reset FORCE=1' to execute\u001b[0m"
+	@echo "Would execute \`git reset --hard @{upstream}'"
+	@echo "Would execute \`git clean -fdx'"
+	@git clean -ndx
+endif
 
-gen:
-	cd $(GOSRCDIR) && \
-		go generate $(GOPATHS)
-	$(GOFMT) $(GOFILES)
+## copier
+
+.PHONY: copier-copy
+copier-copy: ## copy template without merging updates
+	copier recopy$(if $(FORCE), -f,)$(if $(REF), -r $(REF),)
+
+.PHONY: copier-update
+copier-update: ## update project from copier template
+	copier update$(if $(FORCE), -f,)$(if $(REF), -r $(REF),)
+update:: copier-update
+
+## pre-commit
+
+.PHONY: pre-commit-install
+pre-commit-install: ## install pre-commit hook
+	pre-commit install -t pre-commit -t prepare-commit-msg -t commit-msg
+
+.PHONY: pre-commit-check
+pre-commit-check: ## run pre commit hooks
+	pre-commit run --all-files
+check:: pre-commit-check
+
+.PHONY: pre-commit-clean
+pre-commit-clean: ## remove pre-commit and cached repositories
+	pre-commit uninstall
+	pre-commit clean
+clean:: pre-commit-clean
+
+-include *.mk

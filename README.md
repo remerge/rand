@@ -1,10 +1,10 @@
-# go-rand
+# Rand
 
 Pooled, lock-free xorshift PRNG drop-in replacement for Go
 
 ## Benchmark
 
-```
+```plain
 BenchmarkCoreGlobal-4             50000000       29.2 ns/op
 BenchmarkRandGlobal-4            100000000       21.5 ns/op
 
