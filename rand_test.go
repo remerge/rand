@@ -73,7 +73,7 @@ func checkSampleDistribution(t *testing.T, samples []float64, expected *statsRes
 	actual := getStatsResults(samples)
 	err := actual.checkSimilarDistribution(expected)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 }
 
